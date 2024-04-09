@@ -5,6 +5,8 @@
 
 A crate for creating custom line-oriented command interpreters in Rust.
 
+I wrote this as a Rust learning project and was inspired by Python's [cmd](https://docs.python.org/3/library/cmd.html) and the [dev.to article: A small library for writing line oriented-command interpreters in rust](https://dev.to/raminfp/a-small-library-for-writing-line-oriented-command-interpreters-in-the-rust-4phl).
+
 ## Features
 
 - Create custom command interpreters.
