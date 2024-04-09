@@ -118,5 +118,3 @@ use cmd::cmd::Cmd;
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ```
-
-Make sure to replace `miguelalizo` with your GitHub username in the shields' URLs to make them work correctly. This `README.md` provides an overview of your project, showcases its features, includes an example, explains how to use it, and mentions the license.
