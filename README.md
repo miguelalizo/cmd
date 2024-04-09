@@ -2,7 +2,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Rust-1.60%2B-blue.svg)](https://www.rust-lang.org/)
-[![GitHub stars](https://img.shields.io/github/stars/miguelalizo/cmd-rs.svg?style=social)](https://github.com/miguelalizo/cmd)
 
 A crate for creating custom line-oriented command interpreters in Rust.
 
