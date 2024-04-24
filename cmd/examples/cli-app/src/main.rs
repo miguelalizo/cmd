@@ -1,11 +1,12 @@
-use cmd::command_handler::{self, CommandHandler};
+use cmd::command_handler::CommandHandler;
 use cmd::cmd::Cmd;
+use cmd::handlers::Quit;
 
 /// CommandHandler that provides a user greeting command
 #[derive(Debug, Default)]
 pub struct Greeting { }
 
-impl command_handler::CommandHandler for Greeting {
+impl CommandHandler for Greeting {
     fn execute(&self, _args: String) {
         if _args.len() == 0 {
             println!("Hello there, stranger!");
@@ -19,19 +20,9 @@ impl command_handler::CommandHandler for Greeting {
 #[derive(Debug, Default)]
 pub struct Help {}
 
-impl command_handler::CommandHandler for Help {
+impl CommandHandler for Help {
     fn execute(&self, _args: String) {
         println!("Help message");
-    }
-}
-
-/// Command to quit the cmd loop
-#[derive(Debug, Default)]
-pub struct Quit {}
-
-impl CommandHandler for Quit {
-    fn execute(&self, _args: String) {
-        std::process::exit(0);
     }
 }
 
@@ -39,7 +30,7 @@ impl CommandHandler for Quit {
 #[derive(Debug, Default)]
 pub struct Touch { }
 
-impl command_handler::CommandHandler for Touch {
+impl CommandHandler for Touch {
     fn execute(&self, _args: String) {
         let filename = _args.split_whitespace().next().unwrap_or_default();
 

@@ -92,3 +92,6 @@ pub mod cmd;
 
 /// Contains the CommandHandler trait.
 pub mod command_handler;
+
+/// Contains common ready-to-use handlers
+pub mod handlers;
