@@ -1,4 +1,16 @@
-use std::fmt;
+use std::{any::Any, fmt};
+
+// TODO: Look into why this works!
+pub trait AToAny: 'static {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T: 'static> AToAny for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 
 /// Interface for creating new commands
 ///
@@ -61,10 +73,7 @@ use std::fmt;
 ///        }
 ///    }
 /// ```
-pub trait CommandHandler: fmt::Debug {
+pub trait CommandHandler: fmt::Debug + AToAny {
     /// Required method to execute a command
-    fn execute(&self);
-
-    /// Required method to add optional arguments if needed
-    fn add_attr(&mut self, attr: &str);
+    fn execute(&self, _args: String);
 }

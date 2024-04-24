@@ -1,21 +1,17 @@
-use std::fs;
-use cmd::command_handler;
+use cmd::command_handler::{self, CommandHandler};
 use cmd::cmd::Cmd;
 
 /// CommandHandler that provides a user greeting command
 #[derive(Debug, Default)]
-pub struct Greeting { name: Option<String> }
+pub struct Greeting { }
 
 impl command_handler::CommandHandler for Greeting {
-    fn execute(&self) {
-        match &self.name {
-            Some(n) => println!("Welcome {}, a cli command interpreter", n),
-            None => println!("Welcome! This is a cli command interpreter"),
+    fn execute(&self, _args: String) {
+        if _args.len() > 0 {
+            println!("Hello there, stranger!");
+        } else {
+            println!("Hello there, {}", _args);
         }
-    }
-
-    fn add_attr(&mut self, attr: &str) {
-        self.name = Some(String::from(attr));
     }
 }
 
@@ -24,39 +20,40 @@ impl command_handler::CommandHandler for Greeting {
 pub struct Help {}
 
 impl command_handler::CommandHandler for Help {
-    fn execute(&self) {
+    fn execute(&self, _args: String) {
         println!("Help message");
     }
+}
 
-    fn add_attr(&mut self, _attr: &str) { }
+/// Command to quit the cmd loop
+#[derive(Debug, Default)]
+pub struct Quit {}
 
+impl CommandHandler for Quit {
+    fn execute(&self, _args: String) {
+        std::process::exit(0);
+    }
 }
 
 /// CommandHandler that emulates the basic bash touch command to create a new file
 #[derive(Debug, Default)]
-pub struct Touch { filename: String }
+pub struct Touch { }
 
 impl command_handler::CommandHandler for Touch {
-    fn execute(&self) {
-        match self.filename.as_str() {
-            "" => println!("A filename arg needs to be provided!"),
-            _ => {
-                let fs_result = fs::File::create(&self.filename);
-                match fs_result {
-                    Ok(file) => println!("Created file: {:?}", file),
-                    Err(_) => println!("Could not create file: {}", self.filename)
-                }
-            }  
-        }  
+    fn execute(&self, _args: String) {
+        let filename = _args.split_whitespace().next().unwrap_or_default();
+
+        if filename.len() == 0 {
+            println!("Need to specify a filename");
+        } else {
+            let fs_result = std::fs::File::create(filename);
+            match fs_result {
+                Ok(file) => println!("Created file: {:?}", file),
+                Err(_) => println!("Could not create file: {}", filename)
+            }
+        }
     }
 
-    fn add_attr(&mut self, attr: &str) {
-        self.filename = attr
-            .split(" ")
-            .next()
-            .unwrap_or_default()
-            .to_string();
-    }
 }
 
 fn main() -> Result<(), std::io::Error>{
@@ -64,10 +61,12 @@ fn main() -> Result<(), std::io::Error>{
 
     let help = Help::default();
     let hello = Touch::default();
+    let quit = Quit::default();
     let greet = Greeting::default();
     
     cmd.add_cmd(String::from("help"), Box::new(help));
     cmd.add_cmd(String::from("touch"), Box::new(hello));
+    cmd.add_cmd(String::from("quit"), Box::new(quit));
     cmd.add_cmd(String::from("greet"), Box::new(greet));
 
     cmd.run()?;
