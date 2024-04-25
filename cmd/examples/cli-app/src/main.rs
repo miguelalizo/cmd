@@ -1,3 +1,5 @@
+use std::io;
+
 use cmd::command_handler::CommandHandler;
 use cmd::cmd::Cmd;
 use cmd::handlers::Quit;
@@ -48,7 +50,8 @@ impl CommandHandler for Touch {
 }
 
 fn main() -> Result<(), std::io::Error>{
-    let mut cmd = Cmd::new();
+    let stdout = io::stdout();
+    let mut cmd: Cmd<io::Stdout> = Cmd::new(stdout);
 
     let help = Help::default();
     let hello = Touch::default();

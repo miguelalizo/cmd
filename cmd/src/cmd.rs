@@ -1,21 +1,24 @@
 use std::io;
 use std::collections::HashMap;
-use std::io::Write;
 
 use crate::command_handler::CommandHandler;
 
 /// Command interpreter implemented as struct that contains
 /// a handles HashMap of command strings and Boxed CommandHandlers
 #[derive(Debug, Default)]
-pub struct Cmd {
-    handles: HashMap<String, Box<dyn CommandHandler>>
+pub struct Cmd<W: io::Write>{
+    handles: HashMap<String, Box<dyn CommandHandler>>,
+    stdout: W
  }
 
-impl Cmd {
+impl<W: io::Write> Cmd<W>{
     /// Create new Cmd instance
-    pub fn new() -> Cmd {
+    pub fn new(writer: W) -> Cmd<W>
+    where W: io::Write
+    {
         Cmd {
-            handles: HashMap::new()
+            handles: HashMap::new(),
+            stdout: writer
         }
     }
 
@@ -26,7 +29,7 @@ impl Cmd {
             // print promt at every iteration and flush stdout to ensure user
             // can type on same line as promt
             print!("(cmd) ");
-            io::stdout().flush()?;
+            self.stdout.flush()?;
 
             // get user input from stdin
             let mut inputs = String::new();
@@ -90,14 +93,22 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_add_cmd() {
-        // create Cmd app and Greeting
-        let mut app = Cmd::new();
+    fn setup<W>() -> Cmd<Vec<u8>> {
+        let stdout = Vec::new();
+        let mut app: Cmd<Vec<u8>> = Cmd::new( stdout );
         let greet_handler = Greeting::default();
 
         // Add the trait object to the HashMap
         app.add_cmd(String::from("greet"), Box::new(greet_handler));
+
+        app
+
+    }
+
+
+    #[test]
+    fn test_add_cmd() {
+        let app: Cmd<Vec<u8>> = setup::<Cmd::<Vec<u8>>>();
 
 
         // Verify that the key-value pair exists in the HashMap
@@ -116,9 +127,14 @@ mod tests {
 
     #[test]
     fn test_parse_cmd(){
-        let app = Cmd::new();
+        let app = setup::<Cmd::<Vec<u8>>>();
         let line = "command arg1 arg2";
         assert_eq!(app.parse_cmd(line), ("command".to_string(), "arg1 arg2".to_string()))
+    }
+
+    #[test]
+    fn test_run(){
+
     }
 }
 
