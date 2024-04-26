@@ -6,18 +6,22 @@ use crate::command_handler::CommandHandler;
 /// Command interpreter implemented as struct that contains
 /// a handles HashMap of command strings and Boxed CommandHandlers
 #[derive(Debug, Default)]
-pub struct Cmd<W: io::Write>{
-    handles: HashMap<String, Box<dyn CommandHandler>>,
+pub struct Cmd<R: io::BufRead, W: io::Write>{
+    handles: HashMap<String, Box<dyn CommandHandler<W>>>,
+    stdin: R,
     stdout: W
- }
+}
 
-impl<W: io::Write> Cmd<W>{
+impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
     /// Create new Cmd instance
-    pub fn new(writer: W) -> Cmd<W>
-    where W: io::Write
+    pub fn new(reader: R, writer: W) -> Cmd<R, W>
+    where
+        W: io::Write,
+        R: io::Read
     {
         Cmd {
             handles: HashMap::new(),
+            stdin: reader,
             stdout: writer
         }
     }
@@ -28,37 +32,38 @@ impl<W: io::Write> Cmd<W>{
         loop {
             // print promt at every iteration and flush stdout to ensure user
             // can type on same line as promt
-            print!("(cmd) ");
+            self.stdout.write(b"(cmd) ").unwrap();
             self.stdout.flush()?;
 
             // get user input from stdin
             let mut inputs = String::new();
-            io::stdin().read_line(&mut inputs)?;
-
-            if inputs.is_empty() {
-                continue;
-            }
+            self.stdin.read_line(&mut inputs)?;
+            let inputs = inputs.trim();
 
             // separate user input into a command and optional args
-            let inputs = inputs.trim(); //.split_whitespace();
-            let (command, args) = self.parse_cmd(inputs);
+            if !inputs.is_empty() {
+                let (command, args) = self.parse_cmd(inputs);
 
-            // attempt to execute command
-            if let Some(handler) = self.handles.get(&command) {
-                handler.execute(args)
-            } else {
-                println!("No command {command}");
+                // attempt to execute command
+                if let Some(handler) = self.handles.get(&command) {
+                    if let 0 = handler.execute(&mut self.stdout, args) { break; }
+                } else {
+                    self.stdout.write(format!("No command {command}\n").as_bytes()).unwrap();
+                }
             }
+            // write!(self.stdout, "\n").unwrap();
         }
+
+        Ok(())
     }
 
 
     /// Insert new command into the Cmd handles HashMap
     ///
     /// ## Note: Will not overwrite existing handles.
-    pub fn add_cmd(&mut self, name: String, handler: Box<dyn CommandHandler>) {
+    pub fn add_cmd(&mut self, name: String, handler: Box<dyn CommandHandler<W>>) {
         if let Some(_) = self.handles.get(&name) {
-            println!("Warning: Command with handle {name} already exists.");
+            write!(self.stdout, "Warning: Command with handle {name} already exists.").unwrap();
             return
         }
         self.handles.insert(name, handler);
@@ -72,35 +77,39 @@ impl<W: io::Write> Cmd<W>{
     }
 
     #[cfg(test)]
-    fn get_cmd(&self, key: String) -> Option<&Box<dyn CommandHandler>> {
+    fn get_cmd(&self, key: String) -> Option<&Box<dyn CommandHandler<W>>> {
         self.handles.get(&key)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use core::panic;
-    use std::any::Any;
+    use std::{any::Any, io::BufRead};
 
     use super::*;
+    use crate::handlers::Quit;
 
     #[derive(Debug, Default)]
     pub struct Greeting { }
 
-    impl CommandHandler for Greeting {
-        fn execute(&self, _args: String) {
-            println!("Help message");
+    impl<W: io::Write> CommandHandler<W> for Greeting {
+        fn execute(&self, stdout: &mut W, _args: String) -> usize {
+            write!(stdout, "Hello there!").unwrap();
+            1
         }
     }
 
-    fn setup<W>() -> Cmd<Vec<u8>> {
-        let stdout = Vec::new();
-        let mut app: Cmd<Vec<u8>> = Cmd::new( stdout );
+    fn setup() -> Cmd<io::BufReader<std::fs::File>, Vec<u8>> {
+        let f = std::fs::File::open("test_files/test_in.txt").unwrap();
+        let stdin = io::BufReader::new(f);
+
+        let stdout: Vec<u8> = Vec::new();
+        let mut app: Cmd<io::BufReader<std::fs::File>, Vec<u8>> = Cmd::new( stdin, stdout );
         let greet_handler = Greeting::default();
 
         // Add the trait object to the HashMap
         app.add_cmd(String::from("greet"), Box::new(greet_handler));
-
+        app.add_cmd(String::from("quit"), Box::new(Quit::default()));
         app
 
     }
@@ -108,33 +117,43 @@ mod tests {
 
     #[test]
     fn test_add_cmd() {
-        let app: Cmd<Vec<u8>> = setup::<Cmd::<Vec<u8>>>();
+        let mut app = setup();
 
+        let h = app.get_cmd(String::from("greet"));
 
         // Verify that the key-value pair exists in the HashMap
-        match app.get_cmd(String::from("greet")) {
-            Some(handler) => {
-                let it: &dyn Any = handler.as_any();
+        assert!(h.is_some());
 
-                match it.downcast_ref::<Greeting>() {
-                    Some(_t) => (),
-                    None => panic!("Not expected type!"),
-                }
-            },
-            None => panic!("key-value paior does not exist in the HashMap")
-        }
+        // Verify the value can cast down to Greeting
+        let it: &dyn Any = h.unwrap().as_any();
+        assert!(!it.downcast_ref::<Greeting>().is_none());
+
+        // Verify message is printed out when a handle with existing name is added
+        app.add_cmd("greet".to_string(), Box::new(Greeting {} ));
+        let mut std_out_lines = app.stdout.lines();
+        let line1 = std_out_lines.next().unwrap().unwrap();
+
+        assert_eq!(line1, "Warning: Command with handle greet already exists.")
+
     }
 
     #[test]
     fn test_parse_cmd(){
-        let app = setup::<Cmd::<Vec<u8>>>();
+        let app = setup();
         let line = "command arg1 arg2";
         assert_eq!(app.parse_cmd(line), ("command".to_string(), "arg1 arg2".to_string()))
     }
 
     #[test]
     fn test_run(){
+        let mut app = setup();
 
+        app.run().unwrap();
+
+        let std_out_lines = app.stdout;
+        let line1 = String::from_utf8(std_out_lines).unwrap();
+
+        assert_eq!(line1, "(cmd) Hello there!(cmd) (cmd) No command non\n(cmd) ");
     }
 }
 

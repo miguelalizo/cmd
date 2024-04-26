@@ -8,13 +8,14 @@ use cmd::handlers::Quit;
 #[derive(Debug, Default)]
 pub struct Greeting { }
 
-impl CommandHandler for Greeting {
-    fn execute(&self, _args: String) {
+impl<W: io::Write> CommandHandler<W> for Greeting {
+    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
         if _args.len() == 0 {
             println!("Hello there, stranger!");
         } else {
             println!("Hello there, {}", _args);
         }
+        1
     }
 }
 
@@ -22,9 +23,10 @@ impl CommandHandler for Greeting {
 #[derive(Debug, Default)]
 pub struct Help {}
 
-impl CommandHandler for Help {
-    fn execute(&self, _args: String) {
+impl<W: io::Write> CommandHandler<W> for Help {
+    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
         println!("Help message");
+        1
     }
 }
 
@@ -32,8 +34,8 @@ impl CommandHandler for Help {
 #[derive(Debug, Default)]
 pub struct Touch { }
 
-impl CommandHandler for Touch {
-    fn execute(&self, _args: String) {
+impl<W: io::Write> CommandHandler<W> for Touch {
+    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
         let filename = _args.split_whitespace().next().unwrap_or_default();
 
         if filename.len() == 0 {
@@ -45,13 +47,15 @@ impl CommandHandler for Touch {
                 Err(_) => println!("Could not create file: {}", filename)
             }
         }
+        1
     }
 
 }
 
 fn main() -> Result<(), std::io::Error>{
     let stdout = io::stdout();
-    let mut cmd: Cmd<io::Stdout> = Cmd::new(stdout);
+    let stdin = io::BufReader::new(io::stdin());
+    let mut cmd: Cmd<io::BufReader<io::Stdin>, io::Stdout> = Cmd::new(stdin, stdout);
 
     let help = Help::default();
     let hello = Touch::default();
