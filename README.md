@@ -12,6 +12,7 @@ I wrote this as a Rust learning project and was inspired by Python's [cmd](https
 - Create custom command interpreters.
 - Easily define and execute commands.
 - Implement optional command arguments.
+- Easily redirect output to types that implement io::Write.
 
 ## Overview
 
