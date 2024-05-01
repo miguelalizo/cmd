@@ -21,5 +21,4 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       working-directory: ./cmd
-      run: cargo +stable install cargo-llvm-cov --locked
-      run: cargo llvm-cov
+      run: cargo +stable install cargo-llvm-cov --locked && cargo llvm-cov
