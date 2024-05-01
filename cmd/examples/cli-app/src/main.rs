@@ -4,24 +4,10 @@ use cmd::command_handler::CommandHandler;
 use cmd::cmd::Cmd;
 use cmd::handlers::Quit;
 
-/// CommandHandler that provides a user greeting command
-#[derive(Debug, Default)]
-pub struct Greeting { }
-
-impl<W: io::Write> CommandHandler<W> for Greeting {
-    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
-        if _args.len() == 0 {
-            println!("Hello there, stranger!");
-        } else {
-            println!("Hello there, {}", _args);
-        }
-        1
-    }
-}
 
 /// CommandHandler that prints out help message
 #[derive(Debug, Default)]
-pub struct Help {}
+pub struct Help;
 
 impl<W: io::Write> CommandHandler<W> for Help {
     fn execute(&self, _stdout: &mut W, _args: String) -> usize {
@@ -32,7 +18,7 @@ impl<W: io::Write> CommandHandler<W> for Help {
 
 /// CommandHandler that emulates the basic bash touch command to create a new file
 #[derive(Debug, Default)]
-pub struct Touch { }
+pub struct Touch;
 
 impl<W: io::Write> CommandHandler<W> for Touch {
     fn execute(&self, _stdout: &mut W, _args: String) -> usize {
@@ -49,23 +35,19 @@ impl<W: io::Write> CommandHandler<W> for Touch {
         }
         1
     }
-
 }
 
+
 fn main() -> Result<(), std::io::Error>{
-    let stdout = io::stdout();
-    let stdin = io::BufReader::new(io::stdin());
-    let mut cmd: Cmd<io::BufReader<io::Stdin>, io::Stdout> = Cmd::new(stdin, stdout);
+    let mut cmd = Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
 
     let help = Help::default();
     let hello = Touch::default();
     let quit = Quit::default();
-    let greet = Greeting::default();
 
     cmd.add_cmd(String::from("help"), Box::new(help));
     cmd.add_cmd(String::from("touch"), Box::new(hello));
     cmd.add_cmd(String::from("quit"), Box::new(quit));
-    cmd.add_cmd(String::from("greet"), Box::new(greet));
 
     cmd.run()?;
 

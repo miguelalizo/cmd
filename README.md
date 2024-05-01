@@ -22,81 +22,63 @@ cmd provides two crates:
 ## Example
 
 ```rust
-use std::fs;
-use cmd::command_handler;
+use std::io;
+
+use cmd::command_handler::CommandHandler;
 use cmd::cmd::Cmd;
+use cmd::handlers::Quit;
 
-// Define a command handler for greeting
+
+/// CommandHandler that prints out help message
 #[derive(Debug, Default)]
-pub struct Greeting { name: Option<String> }
+pub struct Help;
 
-impl command_handler::CommandHandler for Greeting {
-    fn execute(&self) {
-        match &self.name {
-            Some(n) => println!("Welcome {}, a CLI command interpreter", n),
-            None => println!("Welcome! This is a CLI command interpreter"),
-        }
-    }
-
-    fn add_attr(&mut self, attr: &str) {
-        self.name = Some(String::from(attr));
-    }
-}
-
-// Define a command handler for printing help message
-#[derive(Debug, Default)]
-pub struct Help {}
-
-impl command_handler::CommandHandler for Help {
-    fn execute(&self) {
+impl<W: io::Write> CommandHandler<W> for Help {
+    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
         println!("Help message");
+        1
     }
-
-    fn add_attr(&mut self, _attr: &str) { }
 }
 
-// Define a command handler for creating a new file
+/// CommandHandler that emulates the basic bash touch command to create a new file
 #[derive(Debug, Default)]
-pub struct Touch { filename: String }
+pub struct Touch;
 
-impl command_handler::CommandHandler for Touch {
-    fn execute(&self) {
-        match self.filename.as_str() {
-            "" => println!("A filename arg needs to be provided!"),
-            _ => {
-                let fs_result = fs::File::create(&self.filename);
-                match fs_result {
-                    Ok(file) => println!("Created file: {:?}", file),
-                    Err(_) => println!("Could not create file: {}", self.filename)
-                }
+impl<W: io::Write> CommandHandler<W> for Touch {
+    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
+        let filename = _args.split_whitespace().next().unwrap_or_default();
+
+        if filename.len() == 0 {
+            println!("Need to specify a filename");
+        } else {
+            let fs_result = std::fs::File::create(filename);
+            match fs_result {
+                Ok(file) => println!("Created file: {:?}", file),
+                Err(_) => println!("Could not create file: {}", filename)
             }
         }
-    }
-
-    fn add_attr(&mut self, attr: &str) {
-        self.filename = attr
-            .split(" ")
-            .next()
-            .unwrap_or_default()
-            .to_string();
+        1
     }
 }
 
-fn main() -> Result<(), std::io::Error> {
-    let mut cmd = Cmd::new();
+
+fn main() -> Result<(), std::io::Error>{
+    let mut cmd = Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
 
     let help = Help::default();
     let hello = Touch::default();
-    let greet = Greeting::default();
+    let quit = Quit::default();
 
     cmd.add_cmd(String::from("help"), Box::new(help));
     cmd.add_cmd(String::from("touch"), Box::new(hello));
-    cmd.add_cmd(String::from("greet"), Box::new(greet));
+    cmd.add_cmd(String::from("quit"), Box::new(quit));
 
     cmd.run()?;
 
     Ok(())
+
 }
+
 ```
 
 ## Usage
