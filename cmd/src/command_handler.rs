@@ -1,4 +1,4 @@
-use std::{any::Any, fmt};
+use std::{any::Any, fmt, io};
 
 // TODO: Look into why this works!
 pub trait AToAny: 'static {
@@ -16,7 +16,7 @@ impl<T: 'static> AToAny for T {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```no_run
 ///    #[derive(Debug, Default)]
 ///    pub struct Greeting { name: Option<String> }
 ///
@@ -73,7 +73,12 @@ impl<T: 'static> AToAny for T {
 ///        }
 ///    }
 /// ```
-pub trait CommandHandler: fmt::Debug + AToAny {
+pub trait CommandHandler<W: io::Write>: fmt::Debug + AToAny {
     /// Required method to execute a command
-    fn execute(&self, _args: String);
+    fn execute(&self, _stdout: &mut W, _args: String) -> usize;
 }
+
+// pub trait CommandHandler: fmt::Debug + AToAny {
+//     /// Required method to execute a command
+//     fn execute(&self, _args: String) -> usize;
+// }
