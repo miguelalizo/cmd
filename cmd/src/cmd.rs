@@ -26,6 +26,17 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
         }
     }
 
+    pub fn default() -> Cmd<io::BufReader<io::Stdin>, io::Stdout> {
+        let reader = io::BufReader::new(io::stdin());
+        let writer = io::stdout();
+
+        Cmd {
+            handles: HashMap::new(),
+            stdin: reader,
+            stdout: writer
+        }
+    }
+
     /// Start the command interpreter
     ///
     pub fn run(&mut self) -> Result<(), io::Error>{
@@ -154,6 +165,12 @@ mod tests {
         let line1 = String::from_utf8(std_out_lines).unwrap();
 
         assert_eq!(line1, "(cmd) Hello there!(cmd) (cmd) No command non\n(cmd) ");
+    }
+
+    #[test]
+    fn test_default() {
+        Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
+
     }
 }
 
