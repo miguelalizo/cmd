@@ -73,12 +73,7 @@ impl<T: 'static> AToAny for T {
 ///        }
 ///    }
 /// ```
-pub trait CommandHandler<W: io::Write>: fmt::Debug + AToAny {
+pub trait CommandHandler<W = io::Stdout>: fmt::Debug + AToAny {
     /// Required method to execute a command
     fn execute(&self, _stdout: &mut W, _args: String) -> usize;
 }
-
-// pub trait CommandHandler: fmt::Debug + AToAny {
-//     /// Required method to execute a command
-//     fn execute(&self, _args: String) -> usize;
-// }
