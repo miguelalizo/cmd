@@ -1,4 +1,5 @@
 use std::io;
+use std::io::Write;
 
 use cmd::command_handler::CommandHandler;
 use cmd::cmd::Cmd;
@@ -9,9 +10,9 @@ use cmd::handlers::Quit;
 #[derive(Debug, Default)]
 pub struct Help;
 
-impl<W: io::Write> CommandHandler<W> for Help {
-    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
-        println!("Help message");
+impl CommandHandler for Help {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+        writeln!(_stdout, "Help message").unwrap();
         1
     }
 }
@@ -20,8 +21,8 @@ impl<W: io::Write> CommandHandler<W> for Help {
 #[derive(Debug, Default)]
 pub struct Touch;
 
-impl<W: io::Write> CommandHandler<W> for Touch {
-    fn execute(&self, _stdout: &mut W, _args: String) -> usize {
+impl CommandHandler for Touch {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
         let filename = _args.split_whitespace().next().unwrap_or_default();
 
         if filename.len() == 0 {
