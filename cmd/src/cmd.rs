@@ -95,7 +95,7 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
 #[cfg(test)]
 mod tests {
     use std::{any::Any, io::BufRead};
-    use std::io;
+    use std::io::{self, BufReader, Write};
 
     use super::*;
     use crate::handlers::Quit;
@@ -120,14 +120,25 @@ mod tests {
     }
 
     // Mock object for stdout that always errs on stdout.write()
-    struct StdoutAlwaysErr;
+    struct StdoutWriteErr;
 
-    impl io::Write for StdoutAlwaysErr {
+    impl io::Write for StdoutWriteErr {
         fn write(&mut self, _: &[u8]) -> Result<usize, std::io::Error> {
             Err(io::Error::new(io::ErrorKind::Other, "failed on write"))
         }
         fn flush(&mut self) -> Result<(), std::io::Error> {
-            Err(io::Error::new(io::ErrorKind::Other, "failed on write"))
+            Ok(())
+        }
+    }
+    // Mock object for stdout that always errs on stdout.flush()
+    struct StdoutFlushErr;
+
+    impl io::Write for StdoutFlushErr {
+        fn write(&mut self, _: &[u8]) -> Result<usize, std::io::Error> {
+            Ok(0)
+        }
+        fn flush(&mut self) -> Result<(), std::io::Error> {
+            Err(io::Error::new(io::ErrorKind::Other, "failed on flush"))
         }
     }
 
@@ -145,16 +156,6 @@ mod tests {
         app
 
     }
-
-    fn stdout_always_err_setup() -> Cmd<io::BufReader<std::fs::File>, StdoutAlwaysErr> {
-        let f = std::fs::File::open("test_files/test_in.txt").unwrap();
-        let stdin = io::BufReader::new(f);
-        let stdout = StdoutAlwaysErr;
-        let app = Cmd::new( stdin, stdout );
-
-        app
-    }
-
 
     #[test]
     fn test_add_cmd() -> Result<(), io::Error> {
@@ -182,7 +183,10 @@ mod tests {
 
     #[test]
     fn test_add_cmd_always_error() {
-        let mut app = stdout_always_err_setup();
+        let f = std::fs::File::open("test_files/test_in.txt").unwrap();
+        let stdin = io::BufReader::new(f);
+        let stdout = StdoutWriteErr;
+        let mut app = Cmd::new( stdin, stdout );
 
         // add same command twice, which will cause the self.stdout.write() path to output error
         let _ok = app.add_cmd("greet".to_string(), Box::new(Greeting {} )).unwrap();
@@ -213,20 +217,49 @@ mod tests {
     }
 
     #[test]
-    fn test_run_stdout_always_err() {
-        let mut app = stdout_always_err_setup();
+    fn test_run_stdout_write_err() {
+        let f = std::fs::File::open("test_files/test_in.txt").unwrap();
+        let stdin = io::BufReader::new(f);
+        let stdout = StdoutWriteErr;
+        let mut app = Cmd::new( stdin, stdout );
+        app.stdout.flush().unwrap();
 
         let e = app.run().unwrap_err();
 
         assert_eq!(e.kind(), io::ErrorKind::Other);
         assert_eq!(e.to_string(), "failed on write");
+    }
 
+    #[test]
+    fn test_run_stdout_flush_err() {
+        let f = std::fs::File::open("test_files/test_in.txt").unwrap();
+        let stdin = io::BufReader::new(f);
+        let stdout = StdoutFlushErr;
+        let mut app = Cmd::new( stdin, stdout );
+        app.stdout.write(b"hi").unwrap();
+
+        let e = app.run().unwrap_err();
+
+        assert_eq!(e.kind(), io::ErrorKind::Other);
+        assert_eq!(e.to_string(), "failed on flush");
+    }
+
+    #[test]
+    fn test_run_stdin_read_err() {
+        let stdin = BufReader::new(StdinAlwaysErr);
+        let stdout = io::stdout();
+        let mut app = Cmd::new( stdin, stdout );
+
+        let e = app.run().unwrap_err();
+
+        assert_eq!(e.kind(), io::ErrorKind::Other);
+        assert_eq!(e.to_string(), "failed on read");
     }
 
     #[test]
     fn test_default() {
-        Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
-
+        let app = Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
+        assert!(app.handles.is_empty())
     }
 }
 
