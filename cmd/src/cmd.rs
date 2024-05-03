@@ -43,7 +43,7 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
         loop {
             // print promt at every iteration and flush stdout to ensure user
             // can type on same line as promt
-            self.stdout.write(b"(cmd) ").unwrap();
+            self.stdout.write(b"(cmd) ")?;
             self.stdout.flush()?;
 
             // get user input from stdin
@@ -59,12 +59,10 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
                 if let Some(handler) = self.handles.get(&command) {
                     if let 0 = handler.execute(&mut self.stdout, args) { break; }
                 } else {
-                    self.stdout.write(format!("No command {command}\n").as_bytes()).unwrap();
+                    self.stdout.write(format!("No command {command}\n").as_bytes())?;
                 }
             }
-            // write!(self.stdout, "\n").unwrap();
         }
-
         Ok(())
     }
 
@@ -72,12 +70,13 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
     /// Insert new command into the Cmd handles HashMap
     ///
     /// ## Note: Will not overwrite existing handles.
-    pub fn add_cmd(&mut self, name: String, handler: Box<dyn CommandHandler<W>>) {
+    pub fn add_cmd(&mut self, name: String, handler: Box<dyn CommandHandler<W>>) -> Result<(), io::Error> {
         if let Some(_) = self.handles.get(&name) {
-            write!(self.stdout, "Warning: Command with handle {name} already exists.").unwrap();
-            return
-        }
+            self.stdout.write(format!("Warning: Command with handle {name} already exists.").as_bytes())?;
+        } else {
         self.handles.insert(name, handler);
+        }
+        Ok(())
     }
 
     fn parse_cmd(&self, line: &str) -> (String, String) {
@@ -96,6 +95,7 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
 #[cfg(test)]
 mod tests {
     use std::{any::Any, io::BufRead};
+    use std::io;
 
     use super::*;
     use crate::handlers::Quit;
@@ -110,6 +110,27 @@ mod tests {
         }
     }
 
+    // Mock object for stdin that always errs on stdin.read()
+    struct StdinAlwaysErr;
+
+    impl io::Read for StdinAlwaysErr {
+        fn read(&mut self, _: &mut [u8]) -> Result<usize, std::io::Error> {
+            Err(io::Error::new(io::ErrorKind::Other, "failed on read"))
+        }
+    }
+
+    // Mock object for stdout that always errs on stdout.write()
+    struct StdoutAlwaysErr;
+
+    impl io::Write for StdoutAlwaysErr {
+        fn write(&mut self, _: &[u8]) -> Result<usize, std::io::Error> {
+            Err(io::Error::new(io::ErrorKind::Other, "failed on write"))
+        }
+        fn flush(&mut self) -> Result<(), std::io::Error> {
+            Err(io::Error::new(io::ErrorKind::Other, "failed on write"))
+        }
+    }
+
     fn setup() -> Cmd<io::BufReader<std::fs::File>, Vec<u8>> {
         let f = std::fs::File::open("test_files/test_in.txt").unwrap();
         let stdin = io::BufReader::new(f);
@@ -119,15 +140,24 @@ mod tests {
         let greet_handler = Greeting::default();
 
         // Add the trait object to the HashMap
-        app.add_cmd(String::from("greet"), Box::new(greet_handler));
-        app.add_cmd(String::from("quit"), Box::new(Quit::default()));
+        app.add_cmd(String::from("greet"), Box::new(greet_handler)).unwrap();
+        app.add_cmd(String::from("quit"), Box::new(Quit::default())).unwrap();
         app
 
     }
 
+    fn stdout_always_err_setup() -> Cmd<io::BufReader<std::fs::File>, StdoutAlwaysErr> {
+        let f = std::fs::File::open("test_files/test_in.txt").unwrap();
+        let stdin = io::BufReader::new(f);
+        let stdout = StdoutAlwaysErr;
+        let app = Cmd::new( stdin, stdout );
+
+        app
+    }
+
 
     #[test]
-    fn test_add_cmd() {
+    fn test_add_cmd() -> Result<(), io::Error> {
         let mut app = setup();
 
         let h = app.get_cmd(String::from("greet"));
@@ -140,12 +170,26 @@ mod tests {
         assert!(!it.downcast_ref::<Greeting>().is_none());
 
         // Verify message is printed out when a handle with existing name is added
-        app.add_cmd("greet".to_string(), Box::new(Greeting {} ));
+        app.add_cmd("greet".to_string(), Box::new(Greeting {} ))?;
+
         let mut std_out_lines = app.stdout.lines();
         let line1 = std_out_lines.next().unwrap().unwrap();
 
-        assert_eq!(line1, "Warning: Command with handle greet already exists.")
+        assert_eq!(line1, "Warning: Command with handle greet already exists.");
+        Ok(())
 
+    }
+
+    #[test]
+    fn test_add_cmd_always_error() {
+        let mut app = stdout_always_err_setup();
+
+        // add same command twice, which will cause the self.stdout.write() path to output error
+        let _ok = app.add_cmd("greet".to_string(), Box::new(Greeting {} )).unwrap();
+        let e = app.add_cmd("greet".to_string(), Box::new(Greeting {} )).unwrap_err();
+
+        assert_eq!(e.to_string(), "failed on write");
+        assert_eq!(e.kind(), io::ErrorKind::Other);
     }
 
     #[test]
@@ -156,15 +200,27 @@ mod tests {
     }
 
     #[test]
-    fn test_run(){
+    fn test_run() -> Result<(), io::Error> {
         let mut app = setup();
 
-        app.run().unwrap();
+        app.run()?;
 
         let std_out_lines = app.stdout;
         let line1 = String::from_utf8(std_out_lines).unwrap();
 
         assert_eq!(line1, "(cmd) Hello there!(cmd) (cmd) No command non\n(cmd) ");
+        Ok(())
+    }
+
+    #[test]
+    fn test_run_stdout_always_err() {
+        let mut app = stdout_always_err_setup();
+
+        let e = app.run().unwrap_err();
+
+        assert_eq!(e.kind(), io::ErrorKind::Other);
+        assert_eq!(e.to_string(), "failed on write");
+
     }
 
     #[test]
