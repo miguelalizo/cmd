@@ -4,13 +4,14 @@ use std::collections::HashMap;
 use crate::command_handler::CommandHandler;
 
 /// Command interpreter implemented as struct that contains
-/// a handles HashMap of command strings and Boxed CommandHandlers
-#[derive(Debug, Default)]
+/// boxed CommandHandlers in a hashmap with Strings as the keys
+#[derive(Debug)]
 pub struct Cmd<R: io::BufRead, W: io::Write>{
     handles: HashMap<String, Box<dyn CommandHandler<W>>>,
     stdin: R,
     stdout: W
 }
+
 
 impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
     /// Create new Cmd instance
@@ -26,19 +27,10 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
         }
     }
 
-    pub fn default() -> Cmd<io::BufReader<io::Stdin>, io::Stdout> {
-        let reader = io::BufReader::new(io::stdin());
-        let writer = io::stdout();
-
-        Cmd {
-            handles: HashMap::new(),
-            stdin: reader,
-            stdout: writer
-        }
-    }
 
     /// Start the command interpreter
     ///
+    /// Handlers with return code 0 will break the loop
     pub fn run(&mut self) -> Result<(), io::Error>{
         loop {
             // print promt at every iteration and flush stdout to ensure user
@@ -69,16 +61,18 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
 
     /// Insert new command into the Cmd handles HashMap
     ///
-    /// ## Note: Will not overwrite existing handles.
+    /// ## Note: Will not overwrite existing handler names
     pub fn add_cmd(&mut self, name: String, handler: Box<dyn CommandHandler<W>>) -> Result<(), io::Error> {
-        if let Some(_) = self.handles.get(&name) {
-            self.stdout.write(format!("Warning: Command with handle {name} already exists.").as_bytes())?;
-        } else {
-        self.handles.insert(name, handler);
+        match self.handles.get(&name) {
+            Some(_) => { self.stdout.write(format!("Warning: Command with handle {name} already exists.").as_bytes())?; },
+            None => { self.handles.insert(name, handler); }
         }
+
         Ok(())
     }
 
+
+    // Parse command string into command, and args Strings
     fn parse_cmd(&self, line: &str) -> (String, String) {
         let mut words = line.split_whitespace();
         let command = words.next().unwrap_or_default().to_string();
@@ -86,11 +80,13 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W>{
         (command, args)
     }
 
+
     #[cfg(test)]
     fn get_cmd(&self, key: String) -> Option<&Box<dyn CommandHandler<W>>> {
         self.handles.get(&key)
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -256,10 +252,5 @@ mod tests {
         assert_eq!(e.to_string(), "failed on read");
     }
 
-    #[test]
-    fn test_default() {
-        let app = Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
-        assert!(app.handles.is_empty())
-    }
 }
 

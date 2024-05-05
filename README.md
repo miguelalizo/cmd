@@ -66,7 +66,11 @@ impl CommandHandler for Touch {
 
 
 fn main() -> Result<(), std::io::Error>{
-    let mut cmd = Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
+    let mut cmd = Cmd::new(
+        io::BufReader::new(io::stdin()),
+        io::stdout()
+    );
+
 
     let help = Help::default();
     let hello = Touch::default();
