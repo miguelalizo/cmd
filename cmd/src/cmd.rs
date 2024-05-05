@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_cmd() -> Result<(), io::Error> {
+    fn test_add_cmd() {
         let mut app = setup();
 
         let h = app.get_cmd(String::from("greet"));
@@ -167,14 +167,12 @@ mod tests {
         assert!(!it.downcast_ref::<Greeting>().is_none());
 
         // Verify message is printed out when a handle with existing name is added
-        app.add_cmd("greet".to_string(), Box::new(Greeting {} ))?;
+        app.add_cmd("greet".to_string(), Box::new(Greeting {} )).unwrap();
 
         let mut std_out_lines = app.stdout.lines();
         let line1 = std_out_lines.next().unwrap().unwrap();
 
         assert_eq!(line1, "Warning: Command with handle greet already exists.");
-        Ok(())
-
     }
 
     #[test]
@@ -200,16 +198,15 @@ mod tests {
     }
 
     #[test]
-    fn test_run() -> Result<(), io::Error> {
+    fn test_run() {
         let mut app = setup();
 
-        app.run()?;
+        app.run().unwrap();
 
         let std_out_lines = app.stdout;
         let line1 = String::from_utf8(std_out_lines).unwrap();
 
         assert_eq!(line1, "(cmd) Hello there!(cmd) (cmd) No command non\n(cmd) ");
-        Ok(())
     }
 
     #[test]
