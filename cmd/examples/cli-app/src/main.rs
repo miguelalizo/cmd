@@ -40,15 +40,18 @@ impl CommandHandler for Touch {
 
 
 fn main() -> Result<(), std::io::Error>{
-    let mut cmd = Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
+    let mut cmd = Cmd::new(
+        io::BufReader::new(io::stdin()),
+        io::stdout()
+    );
 
     let help = Help::default();
     let hello = Touch::default();
     let quit = Quit::default();
 
-    cmd.add_cmd(String::from("help"), Box::new(help));
-    cmd.add_cmd(String::from("touch"), Box::new(hello));
-    cmd.add_cmd(String::from("quit"), Box::new(quit));
+    cmd.add_cmd(String::from("help"), Box::new(help))?;
+    cmd.add_cmd(String::from("touch"), Box::new(hello))?;
+    cmd.add_cmd(String::from("quit"), Box::new(quit))?;
 
     cmd.run()?;
 
