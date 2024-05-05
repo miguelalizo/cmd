@@ -72,9 +72,9 @@ fn main() -> Result<(), std::io::Error>{
     let hello = Touch::default();
     let quit = Quit::default();
 
-    cmd.add_cmd(String::from("help"), Box::new(help));
-    cmd.add_cmd(String::from("touch"), Box::new(hello));
-    cmd.add_cmd(String::from("quit"), Box::new(quit));
+    cmd.add_cmd(String::from("help"), Box::new(help))?;
+    cmd.add_cmd(String::from("touch"), Box::new(hello))?;
+    cmd.add_cmd(String::from("quit"), Box::new(quit))?;
 
     cmd.run()?;
 
