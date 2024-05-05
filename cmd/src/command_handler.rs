@@ -14,64 +14,39 @@ impl<T: 'static> AToAny for T {
 
 /// Interface for creating new commands
 ///
+/// Defines io::Stdout as the default generic type
+///
 /// # Examples
 ///
-/// ```no_run
-///    #[derive(Debug, Default)]
-///    pub struct Greeting { name: Option<String> }
+/// ```rust
+/// // CommandHandler that prints out help message
+/// use std::io;
+/// use std::io::Write;
+/// use cmd::command_handler::CommandHandler;
 ///
-///    impl command_handler::CommandHandler for Greeting {
-///        fn execute(&self) {
-///            match &self.name {
-///                Some(n) => println!("Welcome {}, a cli command interpreter", n),
-///                None => println!("Welcome! This is a cli command interpreter"),
-///            }
-///        }
+/// #[derive(Debug, Default)]
+/// pub struct Help;
 ///
-///        fn add_attr(&mut self, attr: &str) {
-///            self.name = Some(String::from(attr));
-///        }
-///    }
+/// impl CommandHandler for Help {
+///     fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+///         writeln!(_stdout, "Help message").unwrap();
+///         1
+///     }
+/// }
 ///
-///    /// CommandHandler that prints out help message
-///    #[derive(Debug, Default)]
-///    pub struct Help {}
+/// /// CommandHandler that prints out a greeting
+/// #[derive(Debug, Default)]
+/// pub struct Greet;
 ///
-///    impl command_handler::CommandHandler for Help {
-///        fn execute(&self) {
-///            println!("Help message");
-///        }
-///
-///        fn add_attr(&mut self, _attr: &str) { }
-///
-///    }
-///
-///    /// CommandHandler that emulates the basic bash touch command to create a new file
-///    #[derive(Debug, Default)]
-///    pub struct Touch { filename: String }
-///
-///    impl command_handler::CommandHandler for Touch {
-///        fn execute(&self) {
-///            match self.filename.as_str() {
-///                "" => println!("A filename arg needs to be provided!"),
-///                _ => {
-///                    let fs_result = fs::File::create(&self.filename);
-///                    match fs_result {
-///                        Ok(file) => println!("Created file: {:?}", file),
-///                        Err(_) => println!("Could not create file: {}", self.filename)
-///                    }
-///                }
-///            }
-///        }
-///
-///        fn add_attr(&mut self, attr: &str) {
-///            self.filename = attr
-///                .split(" ")
-///                .next()
-///                .unwrap_or_default()
-///                .to_string();
-///        }
-///    }
+/// impl<W: io::Write> CommandHandler<W> for Greet {
+///     fn execute(&self, _stdout: &mut W, _args: String) -> usize {
+///         match _args.len() {
+///             0 => _stdout.write(format!("Hello, {}!", _args).as_bytes()).unwrap(),
+///             _ => _stdout.write(b"Hello!").unwrap(),
+///         };
+///         1
+///     }
+/// }
 /// ```
 pub trait CommandHandler<W = io::Stdout>: fmt::Debug + AToAny {
     /// Required method to execute a command

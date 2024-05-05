@@ -2,89 +2,70 @@
 //!
 //! # A tour of cmd
 //!
-//! cmd consists of two crates:
+//! cmd consists of three crates:
 //! - cmd: Used for creating the cmd::Cmd struct that contains the CommandHandler implementations as in a HashMap
 //! - command_handler: Contains the CommandHandler trait
+//! - handlers: Contains ready-to-use Quit CommandHandler struct
 //!
 //! ## Example
 //! ```rust
-//!     use std::fs;
-//!     use cmd::command_handler;
-//!     use cmd::cmd::Cmd;
+//! use std::io;
+//! use std::io::Write;
 //!
-//!     /// CommandHandler that provides a user greeting command
-//!     #[derive(Debug, Default)]
-//!     pub struct Greeting { name: Option<String> }
+//! use cmd::command_handler::CommandHandler;
+//! use cmd::cmd::Cmd;
+//! use cmd::handlers::Quit;
 //!
-//!     impl command_handler::CommandHandler for Greeting {
-//!         fn execute(&self) {
-//!             match &self.name {
-//!                 Some(n) => println!("Welcome {}, a cli command interpreter", n),
-//!                 None => println!("Welcome! This is a cli command interpreter"),
+//!
+//! /// CommandHandler that prints out help message
+//! #[derive(Debug, Default)]
+//! pub struct Help;
+//!
+//! impl CommandHandler for Help {
+//!     fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+//!         writeln!(_stdout, "Help message").unwrap();
+//!         1
+//!     }
+//! }
+//!
+//! /// CommandHandler that emulates the basic bash touch command to create a new file
+//! #[derive(Debug, Default)]
+//! pub struct Touch;
+//!
+//! impl CommandHandler for Touch {
+//!     fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+//!         let filename = _args.split_whitespace().next().unwrap_or_default();
+//!
+//!         if filename.len() == 0 {
+//!             println!("Need to specify a filename");
+//!         } else {
+//!             let fs_result = std::fs::File::create(filename);
+//!             match fs_result {
+//!                 Ok(file) => println!("Created file: {:?}", file),
+//!                 Err(_) => println!("Could not create file: {}", filename)
 //!             }
 //!         }
-//!
-//!         fn add_attr(&mut self, attr: &str) {
-//!             self.name = Some(String::from(attr));
-//!         }
+//!         1
 //!     }
+//! }
 //!
-//!     /// CommandHandler that prints out help message
-//!     #[derive(Debug, Default)]
-//!     pub struct Help {}
 //!
-//!     impl command_handler::CommandHandler for Help {
-//!         fn execute(&self) {
-//!             println!("Help message");
-//!         }
+//! fn main() -> Result<(), std::io::Error>{
+//!     let mut cmd = Cmd::<io::BufReader<io::Stdin>, io::Stdout>::default();
 //!
-//!         fn add_attr(&mut self, _attr: &str) { }
+//!     let help = Help::default();
+//!     let hello = Touch::default();
+//!     let quit = Quit::default();
 //!
-//!     }
+//!     cmd.add_cmd(String::from("help"), Box::new(help));
+//!     cmd.add_cmd(String::from("touch"), Box::new(hello));
+//!     cmd.add_cmd(String::from("quit"), Box::new(quit));
 //!
-//!     /// CommandHandler that emulates the basic bash touch command to create a new file
-//!     #[derive(Debug, Default)]
-//!     pub struct Touch { filename: String }
+//!     // cmd.run()?; // uncomment to run
 //!
-//!     impl command_handler::CommandHandler for Touch {
-//!         fn execute(&self) {
-//!             match self.filename.as_str() {
-//!                 "" => println!("A filename arg needs to be provided!"),
-//!                 _ => {
-//!                     let fs_result = fs::File::create(&self.filename);
-//!                     match fs_result {
-//!                         Ok(file) => println!("Created file: {:?}", file),
-//!                         Err(_) => println!("Could not create file: {}", self.filename)
-//!                     }
-//!                 }
-//!             }
-//!         }
+//!     Ok(())
 //!
-//!         fn add_attr(&mut self, attr: &str) {
-//!             self.filename = attr
-//!                 .split(" ")
-//!                 .next()
-//!                 .unwrap_or_default()
-//!                 .to_string();
-//!         }
-//!     }
-//!
-//!     fn main() -> Result<(), std::io::Error>{
-//!         let mut cmd = Cmd::new();
-//!
-//!         let help = Help::default();
-//!         let hello = Touch::default();
-//!         let greet = Greeting::default();
-//!
-//!         cmd.add_cmd(String::from("help"), Box::new(help));
-//!         cmd.add_cmd(String::from("touch"), Box::new(hello));
-//!         cmd.add_cmd(String::from("greet"), Box::new(greet));
-//!
-//!         cmd.run()?;
-//!
-//!         Ok(())
-//!
-//!     }
+//! }
 //! ```
 
 /// Used for creating the cmd::Cmd struct that contains the CommandHandler implementations as in a HashMap.
