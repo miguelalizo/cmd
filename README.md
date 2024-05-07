@@ -94,7 +94,7 @@ To use rusty-cmd in your project, add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-rusty-cmd = "0.1.0"
+rusty-cmd = "0.2.0"
 ```
 
 Then import the crate in your Rust code:
