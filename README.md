@@ -3,8 +3,8 @@
 A crate for creating custom line-oriented command interpreters in Rust.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.60%2B-blue.svg)](https://docs.rs/rusty-cmd/latest/rusty_cmd/)
-[![Documentation](https://img.shields.io/badge/Documentation-Link-blue.svg)](https://your-documentation-link)
+[![Rust](https://img.shields.io/badge/Rust-1.60%2B-blue.svg)](https://www.rust-lang.org/)
+[![Documentation](https://img.shields.io/badge/Documentation-Link-blue.svg)](https://docs.rs/rusty-cmd/latest/rusty_cmd/)
 
 I wrote this as a Rust learning project and was inspired by Python's [cmd](https://docs.python.org/3/library/cmd.html) and the [dev.to article: A small library for writing line oriented-command interpreters in rust](https://dev.to/raminfp/a-small-library-for-writing-line-oriented-command-interpreters-in-the-rust-4phl).
 
