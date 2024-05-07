@@ -3,11 +3,12 @@ workspace = { members = ["examples/cli-app"] }
 name = "rusty-cmd"
 description = "A crate for creating custom line-oriented command interpreters in Rust."
 repository = "https://github.com/miguelalizo/cmd"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
+readme = "../README.md"
+documentation = "https://docs.rs/rusty-cmd/latest/rusty_cmd/"
 
 exclude = ["examples", "test_files", ".*"]
 
 [dependencies]
-
