@@ -12,9 +12,9 @@
 //! use std::io;
 //! use std::io::Write;
 //!
-//! use cmd::command_handler::CommandHandler;
-//! use cmd::cmd::Cmd;
-//! use cmd::handlers::Quit;
+//! use rusty_cmd::command_handler::CommandHandler;
+//! use rusty_cmd::cmd::Cmd;
+//! use rusty_cmd::handlers::Quit;
 //!
 //!
 //! /// CommandHandler that prints out help message

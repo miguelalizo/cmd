@@ -22,7 +22,7 @@ impl<T: 'static> AToAny for T {
 /// // CommandHandler that prints out help message
 /// use std::io;
 /// use std::io::Write;
-/// use cmd::command_handler::CommandHandler;
+/// use rusty_cmd::command_handler::CommandHandler;
 ///
 /// #[derive(Debug, Default)]
 /// pub struct Help;

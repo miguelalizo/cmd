@@ -1,9 +1,10 @@
-# cmd
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.60%2B-blue.svg)](https://www.rust-lang.org/)
+# rusty-cmd
 
 A crate for creating custom line-oriented command interpreters in Rust.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/Rust-1.60%2B-blue.svg)](https://docs.rs/rusty-cmd/latest/rusty_cmd/)
+[![Documentation](https://img.shields.io/badge/Documentation-Link-blue.svg)](https://your-documentation-link)
 
 I wrote this as a Rust learning project and was inspired by Python's [cmd](https://docs.python.org/3/library/cmd.html) and the [dev.to article: A small library for writing line oriented-command interpreters in rust](https://dev.to/raminfp/a-small-library-for-writing-line-oriented-command-interpreters-in-the-rust-4phl).
 
@@ -17,7 +18,7 @@ I wrote this as a Rust learning project and was inspired by Python's [cmd](https
 
 ## Overview
 
-cmd provides two crates:
+rusty-cmd provides two crates:
 - `cmd`: Used for creating the `Cmd` struct that contains the `CommandHandler` implementations in a `HashMap`.
 - `command_handler`: Contains the `CommandHandler` trait.
 
@@ -27,9 +28,9 @@ cmd provides two crates:
 use std::io;
 use std::io::Write;
 
-use cmd::command_handler::CommandHandler;
-use cmd::cmd::Cmd;
-use cmd::handlers::Quit;
+use rusty_cmd::command_handler::CommandHandler;
+use rusty_cmd::cmd::Cmd;
+use rusty_cmd::handlers::Quit;
 
 
 /// CommandHandler that prints out help message
@@ -89,18 +90,18 @@ fn main() -> Result<(), std::io::Error>{
 
 ## Usage
 
-To use cmd-rs in your project, add the following to your `Cargo.toml` file:
+To use rusty-cmd in your project, add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-cmd_interpreter = "0.1.0"
+rusty-cmd = "0.1.0"
 ```
 
 Then import the crate in your Rust code:
 
 ```rust
-use cmd::command_handler;
-use cmd::cmd::Cmd;
+use rusty_cmd::command_handler;
+use rusty_cmd::cmd::Cmd;
 ```
 
 ## License

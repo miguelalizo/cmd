@@ -9,6 +9,6 @@ license = "MIT"
 readme = "../README.md"
 documentation = "https://docs.rs/rusty-cmd/latest/rusty_cmd/"
 
-exclude = ["examples", "test_files", ".*"]
+exclude = ["examples/", "test_files/", ".*"]
 
 [dependencies]
