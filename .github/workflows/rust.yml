@@ -17,8 +17,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      working-directory: ./cmd
+      working-directory: ./rusty-cmd
       run: cargo build --verbose
     - name: Run tests
-      working-directory: ./cmd
+      working-directory: ./rusty-cmd
       run: cargo +stable install cargo-llvm-cov --locked && cargo llvm-cov
