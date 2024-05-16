@@ -12,7 +12,7 @@
 //! use std::io;
 //! use std::io::Write;
 //!
-//! use rusty_cmd::command_handler::CommandHandler;
+//! use rusty_cmd::command_handler::{CommandHandler,CommandResult};
 //! use rusty_cmd::cmd::Cmd;
 //! use rusty_cmd::handlers::Quit;
 //!
@@ -22,9 +22,9 @@
 //! pub struct Help;
 //!
 //! impl CommandHandler for Help {
-//!     fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+//!     fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
 //!         writeln!(_stdout, "Help message").unwrap();
-//!         1
+//!         CommandResult::Continue
 //!     }
 //! }
 //!
@@ -33,8 +33,8 @@
 //! pub struct Touch;
 //!
 //! impl CommandHandler for Touch {
-//!     fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
-//!         let filename = _args.split_whitespace().next().unwrap_or_default();
+//!     fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
+//!         let filename = _args.first().unwrap_or(&"");
 //!
 //!         if filename.len() == 0 {
 //!             println!("Need to specify a filename");
@@ -45,7 +45,7 @@
 //!                 Err(_) => println!("Could not create file: {}", filename)
 //!             }
 //!         }
-//!         1
+//!         CommandResult::Continue
 //!     }
 //! }
 //!

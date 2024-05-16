@@ -1,5 +1,5 @@
+use crate::command_handler::{CommandHandler, CommandResult};
 use std::io;
-use crate::command_handler::CommandHandler;
 
 /// Ready-to-use command to quit the cmd loop
 ///
@@ -8,8 +8,8 @@ use crate::command_handler::CommandHandler;
 pub struct Quit {}
 
 impl<W: io::Write> CommandHandler<W> for Quit {
-    fn execute(&self, _cmd: &mut W, _args: String) -> usize {
-        0
+    fn execute(&self, _cmd: &mut W, _args: &[&str]) -> CommandResult {
+        CommandResult::Stop
     }
 }
 
@@ -18,8 +18,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_quit(){
+    fn test_quit() {
         let q = Quit::default();
-        assert_eq!(q.execute(&mut io::stdout(), "".to_string()), 0)
+        assert!(matches!(
+            q.execute(&mut io::stdout(), &[]),
+            CommandResult::Stop
+        ))
     }
 }
