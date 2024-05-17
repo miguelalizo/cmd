@@ -11,7 +11,6 @@ impl<T: 'static> AToAny for T {
     }
 }
 
-
 /// Interface for creating new commands
 ///
 /// Defines io::Stdout as the default generic type
@@ -50,5 +49,5 @@ impl<T: 'static> AToAny for T {
 /// ```
 pub trait CommandHandler<W = io::Stdout>: fmt::Debug + AToAny {
     /// Required method to execute a command
-    fn execute(&self, _stdout: &mut W, _args: String) -> usize;
+    fn execute(&self, _stdout: &mut W, _args: &str) -> usize;
 }

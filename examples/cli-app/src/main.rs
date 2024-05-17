@@ -1,17 +1,16 @@
 use std::io;
 use std::io::Write;
 
-use rusty_cmd::command_handler::CommandHandler;
 use rusty_cmd::cmd::Cmd;
+use rusty_cmd::command_handler::CommandHandler;
 use rusty_cmd::handlers::Quit;
-
 
 /// CommandHandler that prints out help message
 #[derive(Debug, Default)]
 pub struct Help;
 
 impl CommandHandler for Help {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> usize {
         writeln!(_stdout, "Help message").unwrap();
         1
     }
@@ -22,7 +21,7 @@ impl CommandHandler for Help {
 pub struct Touch;
 
 impl CommandHandler for Touch {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> usize {
         let filename = _args.split_whitespace().next().unwrap_or_default();
 
         if filename.len() == 0 {
@@ -31,19 +30,15 @@ impl CommandHandler for Touch {
             let fs_result = std::fs::File::create(filename);
             match fs_result {
                 Ok(file) => println!("Created file: {:?}", file),
-                Err(_) => println!("Could not create file: {}", filename)
+                Err(_) => println!("Could not create file: {}", filename),
             }
         }
         1
     }
 }
 
-
-fn main() -> Result<(), std::io::Error>{
-    let mut cmd = Cmd::new(
-        io::BufReader::new(io::stdin()),
-        io::stdout()
-    );
+fn main() -> Result<(), std::io::Error> {
+    let mut cmd = Cmd::new(io::BufReader::new(io::stdin()), io::stdout());
 
     let help = Help::default();
     let hello = Touch::default();
@@ -56,5 +51,4 @@ fn main() -> Result<(), std::io::Error>{
     cmd.run()?;
 
     Ok(())
-
 }
