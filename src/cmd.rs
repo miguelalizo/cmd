@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io;
 
-use crate::command_handler::CommandHandler;
+use crate::command_handler::{CommandHandler, CommandResult};
 
 /// Command interpreter implemented as struct that contains
 /// boxed CommandHandlers in a hashmap with Strings as the keys
@@ -47,7 +47,10 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W> {
 
                 // attempt to execute command
                 if let Some(handler) = self.handles.get(command) {
-                    if let 0 = handler.execute(&mut self.stdout, args) {
+                    if matches!(
+                        handler.execute(&mut self.stdout, args),
+                        CommandResult::Break
+                    ) {
                         break;
                     }
                 } else {
@@ -82,8 +85,9 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W> {
 
     // Parse command string into command, and args Strings
     fn parse_cmd<'a>(&self, line: &'a str) -> (&'a str, &'a str) {
-        let mut words = line.split_whitespace();
-        let command = words.next().unwrap_or("");
+        let line = line.trim();
+        let first_space = line.find(' ').unwrap_or(line.len());
+        let command = &line[..first_space];
 
         let args = line[command.len()..].trim();
         (command, args)
@@ -101,15 +105,16 @@ mod tests {
     use std::{any::Any, io::BufRead};
 
     use super::*;
+    use crate::command_handler::CommandResult;
     use crate::handlers::Quit;
 
     #[derive(Debug, Default)]
     pub struct Greeting {}
 
     impl<W: io::Write> CommandHandler<W> for Greeting {
-        fn execute(&self, stdout: &mut W, _args: &str) -> usize {
+        fn execute(&self, stdout: &mut W, _args: &str) -> CommandResult {
             write!(stdout, "Hello there!").unwrap();
-            1
+            CommandResult::Continue
         }
     }
 
@@ -208,6 +213,31 @@ mod tests {
         let app = setup();
         let line = "command arg1 arg2";
         assert_eq!(app.parse_cmd(line), ("command", "arg1 arg2"))
+    }
+    #[test]
+
+    fn test_parse_cmd_empty_line() {
+        let app = setup();
+        assert_eq!(app.parse_cmd(""), ("", ""));
+
+        assert_eq!(app.parse_cmd("    "), ("", ""));
+    }
+
+    #[test]
+    fn test_parse_cmd_remove_extra_spaces() {
+        let app = setup();
+        let line = "     command arg1 arg2";
+        assert_eq!(app.parse_cmd(line), ("command", "arg1 arg2"))
+    }
+
+    #[test]
+    fn test_parse_cmd_empty_args() {
+        let app = setup();
+        let line = "command";
+        assert_eq!(app.parse_cmd(line), ("command", ""));
+
+        let line = "     command";
+        assert_eq!(app.parse_cmd(line), ("command", ""));
     }
 
     #[test]

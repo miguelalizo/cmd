@@ -1,18 +1,17 @@
+use rusty_cmd::cmd::Cmd;
+use rusty_cmd::command_handler::{CommandHandler, CommandResult};
+use rusty_cmd::handlers::Quit;
 use std::io;
 use std::io::Write;
-
-use rusty_cmd::cmd::Cmd;
-use rusty_cmd::command_handler::CommandHandler;
-use rusty_cmd::handlers::Quit;
 
 /// CommandHandler that prints out help message
 #[derive(Debug, Default)]
 pub struct Help;
 
 impl CommandHandler for Help {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> usize {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> CommandResult {
         writeln!(_stdout, "Help message").unwrap();
-        1
+        CommandResult::Continue
     }
 }
 
@@ -21,7 +20,7 @@ impl CommandHandler for Help {
 pub struct Touch;
 
 impl CommandHandler for Touch {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> usize {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> CommandResult {
         let filename = _args.split_whitespace().next().unwrap_or_default();
 
         if filename.len() == 0 {
@@ -33,7 +32,7 @@ impl CommandHandler for Touch {
                 Err(_) => println!("Could not create file: {}", filename),
             }
         }
-        1
+        CommandResult::Continue
     }
 }
 
