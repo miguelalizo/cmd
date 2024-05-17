@@ -20,5 +20,5 @@ jobs:
       working-directory: ./rusty-cmd
       run: cargo build --verbose
     - name: Run tests
-      working-directory: ./rusty-cmd
+      working-directory: ./
       run: cargo +stable install cargo-llvm-cov --locked && cargo llvm-cov
