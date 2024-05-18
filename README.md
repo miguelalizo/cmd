@@ -108,6 +108,16 @@ use rusty_cmd::cmd::Cmd;
 ## Contributing
 We welcome contributions! See our [CONTIBUTING guide](CONTRIBUTING.md)
 
+## Contributors ✨
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/miguelalizo"><img src="https://avatars.githubusercontent.com/u/108839050?v=4" width="100px;" alt="Miguel Alizo"/><br /><sub><b>Miguel Alizo</b></sub></a><br/> <a>🦀✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/aughey"><img src="https://avatars.githubusercontent.com/u/12618?v=4" width="100px;" alt="John Aughey"/><br /><sub><b>John Aughey</b></sub></a><br/> <a>🦀✅</a></td>
+</table>
+
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
