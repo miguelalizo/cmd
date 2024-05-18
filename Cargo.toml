@@ -5,7 +5,7 @@ repository = "https://github.com/miguelalizo/cmd"
 version = "1.0.0"
 edition = "2021"
 license = "MIT"
-readme = "../README.md"
+readme = "./README.md"
 documentation = "https://docs.rs/rusty-cmd/latest/rusty_cmd/"
 
 exclude = ["examples/", "test_files/", ".*"]
