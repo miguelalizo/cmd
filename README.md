@@ -105,6 +105,9 @@ use rusty_cmd::command_handler::{CommandHandler, CommandResult};
 use rusty_cmd::cmd::Cmd;
 ```
 
+## Contributing
+We welcome contributions! See our [CONTIBUTING guide](CONTRIBUTING.md)
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
