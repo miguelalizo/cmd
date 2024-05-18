@@ -143,7 +143,7 @@ mod tests {
 
     impl io::Write for StdoutFlushErr {
         fn write(&mut self, _: &[u8]) -> Result<usize, std::io::Error> {
-            Ok(0)
+            Ok(1)
         }
         fn flush(&mut self) -> Result<(), std::io::Error> {
             Err(io::Error::new(io::ErrorKind::Other, "failed on flush"))
@@ -261,7 +261,8 @@ mod tests {
         let stdin = io::BufReader::new(f);
         let stdout = StdoutWriteErr;
         let mut app = Cmd::new(stdin, stdout);
-        app.stdout.flush().unwrap();
+
+        app.stdout.flush().unwrap(); // this line is here to ensure all statements are run during testing
 
         let e = app.run().unwrap_err();
 
@@ -275,12 +276,11 @@ mod tests {
         let stdin = io::BufReader::new(f);
         let stdout = StdoutFlushErr;
         let mut app = Cmd::new(stdin, stdout);
-        app.stdout.write(b"hi").unwrap();
 
         let e = app.run().unwrap_err();
 
-        assert_eq!(e.kind(), io::ErrorKind::WriteZero);
-        assert_eq!(e.to_string(), "failed to write whole buffer");
+        assert_eq!(e.kind(), io::ErrorKind::Other);
+        assert_eq!(e.to_string(), "failed on flush");
     }
 
     #[test]
