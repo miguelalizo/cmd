@@ -28,7 +28,7 @@ rusty-cmd provides two crates:
 use std::io;
 use std::io::Write;
 
-use rusty_cmd::command_handler::CommandHandler;
+use rusty_cmd::command_handler::{CommandHandler, CommandResult};
 use rusty_cmd::cmd::Cmd;
 use rusty_cmd::handlers::Quit;
 
@@ -38,9 +38,9 @@ use rusty_cmd::handlers::Quit;
 pub struct Help;
 
 impl CommandHandler for Help {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
         writeln!(_stdout, "Help message").unwrap();
-        1
+        CommandResult::Continue
     }
 }
 
@@ -49,19 +49,20 @@ impl CommandHandler for Help {
 pub struct Touch;
 
 impl CommandHandler for Touch {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: String) -> usize {
-        let filename = _args.split_whitespace().next().unwrap_or_default();
-
-        if filename.len() == 0 {
-            println!("Need to specify a filename");
-        } else {
-            let fs_result = std::fs::File::create(filename);
-            match fs_result {
-                Ok(file) => println!("Created file: {:?}", file),
-                Err(_) => println!("Could not create file: {}", filename)
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
+        let option_filename = _args.first();
+    
+        match option_filename {
+            Some(filename) => {
+                let fs_result = std::fs::File::create(filename);
+                match fs_result {
+                    Ok(file) => println!("Created file: {:?}", file),
+                    Err(_) => println!("Could not create file: {}", filename),
+                }
             }
+            None => println!("Need to specify a filename"),
         }
-        1
+        CommandResult::Continue
     }
 }
 
@@ -94,13 +95,13 @@ To use rusty-cmd in your project, add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-rusty-cmd = "0.2.0"
+rusty-cmd = "1.0.0"
 ```
 
 Then import the crate in your Rust code:
 
 ```rust
-use rusty_cmd::command_handler;
+use rusty_cmd::command_handler::{CommandHandler, CommandResult};
 use rusty_cmd::cmd::Cmd;
 ```
 
