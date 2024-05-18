@@ -1,14 +1,4 @@
-use std::{any::Any, fmt, io};
-
-pub trait AToAny: 'static {
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl<T: 'static> AToAny for T {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
+use std::{fmt, io};
 
 /// Interface for creating new commands
 ///
@@ -48,7 +38,7 @@ impl<T: 'static> AToAny for T {
 ///     }
 /// }
 /// ```
-pub trait CommandHandler<W = io::Stdout>: fmt::Debug + AToAny {
+pub trait CommandHandler<W = io::Stdout>: fmt::Debug {
     /// Required method to execute a command
     fn execute(&self, _stdout: &mut W, _args: &[&str]) -> CommandResult;
 }

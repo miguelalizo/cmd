@@ -106,8 +106,8 @@ fn split_args(args: &str) -> Vec<&str> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::BufRead;
     use std::io::{self, BufReader, Write};
-    use std::{any::Any, io::BufRead};
 
     use super::*;
     use crate::command_handler::CommandResult;
@@ -173,16 +173,21 @@ mod tests {
 
     #[test]
     fn test_add_cmd() {
-        let mut app = setup();
-
-        let h = app.get_cmd(String::from("greet"));
+        let app = setup();
+        let mut stdout = vec![];
 
         // Verify that the key-value pair exists in the HashMap
+        let h = app.get_cmd(String::from("greet"));
         assert!(h.is_some());
 
-        // Verify the value can cast down to Greeting
-        let it: &dyn Any = h.unwrap().as_any();
-        assert!(!it.downcast_ref::<Greeting>().is_none());
+        // Verify right handler was added to hashmap
+        h.unwrap().execute(&mut stdout, &[]);
+        assert_eq!(String::from_utf8(stdout).unwrap(), "Hello there!");
+    }
+
+    #[test]
+    fn test_add_existing_cmd() {
+        let mut app = setup();
 
         // Verify message is printed out when a handle with existing name is added
         app.add_cmd("greet".to_string(), Box::new(Greeting {}))
@@ -246,8 +251,8 @@ mod tests {
 
         app.run().unwrap();
 
-        let std_out_lines = app.stdout;
-        let line1 = String::from_utf8(std_out_lines).unwrap();
+        // let std_out_lines = ;
+        let line1 = String::from_utf8(app.stdout).unwrap();
 
         assert_eq!(
             line1,
