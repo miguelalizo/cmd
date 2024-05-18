@@ -43,12 +43,13 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W> {
 
             // separate user input into a command and optional args
             if !inputs.is_empty() {
-                let (command, args) = self.parse_cmd(inputs);
+                let (command, args) = parse_cmd(inputs);
+                let args = split_args(args);
 
                 // attempt to execute command
                 if let Some(handler) = self.handles.get(command) {
                     if matches!(
-                        handler.execute(&mut self.stdout, args),
+                        handler.execute(&mut self.stdout, &args),
                         CommandResult::Break
                     ) {
                         break;
@@ -83,20 +84,24 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W> {
         Ok(())
     }
 
-    // Parse command string into command, and args Strings
-    fn parse_cmd<'a>(&self, line: &'a str) -> (&'a str, &'a str) {
-        let line = line.trim();
-        let first_space = line.find(' ').unwrap_or(line.len());
-        let command = &line[..first_space];
-
-        let args = line[command.len()..].trim();
-        (command, args)
-    }
-
     #[cfg(test)]
     fn get_cmd(&self, key: String) -> Option<&Box<dyn CommandHandler<W>>> {
         self.handles.get(&key)
     }
+}
+
+// Parse command string into command, and args Strings
+fn parse_cmd(line: &str) -> (&str, &str) {
+    let line = line.trim();
+    let first_space = line.find(' ').unwrap_or(line.len());
+    let command = &line[..first_space];
+
+    let args = line[command.len()..].trim();
+    (command, args)
+}
+
+fn split_args(args: &str) -> Vec<&str> {
+    args.split_whitespace().map(|arg| arg.trim()).collect()
 }
 
 #[cfg(test)]
@@ -112,7 +117,7 @@ mod tests {
     pub struct Greeting {}
 
     impl<W: io::Write> CommandHandler<W> for Greeting {
-        fn execute(&self, stdout: &mut W, _args: &str) -> CommandResult {
+        fn execute(&self, stdout: &mut W, _args: &[&str]) -> CommandResult {
             write!(stdout, "Hello there!").unwrap();
             CommandResult::Continue
         }
@@ -210,34 +215,29 @@ mod tests {
 
     #[test]
     fn test_parse_cmd() {
-        let app = setup();
         let line = "command arg1 arg2";
-        assert_eq!(app.parse_cmd(line), ("command", "arg1 arg2"))
+        assert_eq!(parse_cmd(line), ("command", "arg1 arg2"))
     }
     #[test]
 
     fn test_parse_cmd_empty_line() {
-        let app = setup();
-        assert_eq!(app.parse_cmd(""), ("", ""));
-
-        assert_eq!(app.parse_cmd("    "), ("", ""));
+        assert_eq!(parse_cmd(""), ("", ""));
+        assert_eq!(parse_cmd("    "), ("", ""));
     }
 
     #[test]
     fn test_parse_cmd_remove_extra_spaces() {
-        let app = setup();
         let line = "     command arg1 arg2";
-        assert_eq!(app.parse_cmd(line), ("command", "arg1 arg2"))
+        assert_eq!(parse_cmd(line), ("command", "arg1 arg2"))
     }
 
     #[test]
     fn test_parse_cmd_empty_args() {
-        let app = setup();
         let line = "command";
-        assert_eq!(app.parse_cmd(line), ("command", ""));
+        assert_eq!(parse_cmd(line), ("command", ""));
 
         let line = "     command";
-        assert_eq!(app.parse_cmd(line), ("command", ""));
+        assert_eq!(parse_cmd(line), ("command", ""));
     }
 
     #[test]
@@ -293,5 +293,19 @@ mod tests {
 
         assert_eq!(e.kind(), io::ErrorKind::Other);
         assert_eq!(e.to_string(), "failed on read");
+    }
+
+    #[test]
+    fn test_split_args() {
+        let args = "arg1 arg2 arg3";
+        let expected = vec!["arg1", "arg2", "arg3"];
+        assert_eq!(split_args(args), expected);
+    }
+
+    #[test]
+    fn split_empty_args() {
+        let args = "";
+        let expected: Vec<&str> = vec![];
+        assert_eq!(split_args(args), expected);
     }
 }

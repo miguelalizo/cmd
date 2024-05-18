@@ -27,7 +27,7 @@ impl<T: 'static> AToAny for T {
 /// pub struct Help;
 ///
 /// impl CommandHandler for Help {
-///     fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> CommandResult {
+///     fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
 ///         writeln!(_stdout, "Help message").unwrap();
 ///         CommandResult::Continue
 ///     }
@@ -38,9 +38,10 @@ impl<T: 'static> AToAny for T {
 /// pub struct Greet;
 ///
 /// impl<W: io::Write> CommandHandler<W> for Greet {
-///     fn execute(&self, _stdout: &mut W, _args: &str) -> CommandResult {
+///     fn execute(&self, _stdout: &mut W, _args: &[&str]) -> CommandResult {
+///         let joined_args = _args.join(", ");
 ///         match _args.len() {
-///             0 => _stdout.write(format!("Hello, {}!", _args).as_bytes()).unwrap(),
+///             0 => _stdout.write(format!("Hello, {}!", joined_args).as_bytes()).unwrap(),
 ///             _ => _stdout.write(b"Hello!").unwrap(),
 ///         };
 ///         CommandResult::Continue
@@ -49,7 +50,7 @@ impl<T: 'static> AToAny for T {
 /// ```
 pub trait CommandHandler<W = io::Stdout>: fmt::Debug + AToAny {
     /// Required method to execute a command
-    fn execute(&self, _stdout: &mut W, _args: &str) -> CommandResult;
+    fn execute(&self, _stdout: &mut W, _args: &[&str]) -> CommandResult;
 }
 
 pub enum CommandResult {

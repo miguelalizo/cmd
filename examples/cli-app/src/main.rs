@@ -9,7 +9,7 @@ use std::io::Write;
 pub struct Help;
 
 impl CommandHandler for Help {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> CommandResult {
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
         writeln!(_stdout, "Help message").unwrap();
         CommandResult::Continue
     }
@@ -20,17 +20,18 @@ impl CommandHandler for Help {
 pub struct Touch;
 
 impl CommandHandler for Touch {
-    fn execute(&self, _stdout: &mut io::Stdout, _args: &str) -> CommandResult {
-        let filename = _args.split_whitespace().next().unwrap_or_default();
+    fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
+        let option_filename = _args.first();
 
-        if filename.len() == 0 {
-            println!("Need to specify a filename");
-        } else {
-            let fs_result = std::fs::File::create(filename);
-            match fs_result {
-                Ok(file) => println!("Created file: {:?}", file),
-                Err(_) => println!("Could not create file: {}", filename),
+        match option_filename {
+            Some(filename) => {
+                let fs_result = std::fs::File::create(filename);
+                match fs_result {
+                    Ok(file) => println!("Created file: {:?}", file),
+                    Err(_) => println!("Could not create file: {}", filename),
+                }
             }
+            None => println!("Need to specify a filename"),
         }
         CommandResult::Continue
     }

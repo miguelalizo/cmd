@@ -8,7 +8,7 @@ use std::io;
 pub struct Quit {}
 
 impl<W: io::Write> CommandHandler<W> for Quit {
-    fn execute(&self, _cmd: &mut W, _args: &str) -> CommandResult {
+    fn execute(&self, _cmd: &mut W, _args: &[&str]) -> CommandResult {
         CommandResult::Break
     }
 }
@@ -21,7 +21,7 @@ mod tests {
     fn test_quit() {
         let q = Quit::default();
         assert!(matches!(
-            q.execute(&mut io::stdout(), ""),
+            q.execute(&mut io::stdout(), &[]),
             CommandResult::Break
         ))
     }
