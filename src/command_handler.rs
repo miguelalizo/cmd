@@ -1,5 +1,3 @@
-use std::{fmt, io};
-
 /// Interface for creating new commands
 ///
 /// Defines io::Stdout as the default generic type.
@@ -13,37 +11,55 @@ use std::{fmt, io};
 /// use std::io::Write;
 /// use rusty_cmd::command_handler::{CommandHandler, CommandResult};
 ///
-/// #[derive(Debug, Default)]
+/// #[derive(Default)]
 /// pub struct Help;
 ///
-/// impl CommandHandler for Help {
-///     fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
-///         writeln!(_stdout, "Help message").unwrap();
+/// impl<W> CommandHandler<W> for Help
+///     where W: std::io::Write {
+///     fn execute(&self, output: &mut W, args: &[&str]) -> CommandResult {
+///         writeln!(output, "Help message").unwrap();
 ///         CommandResult::Continue
 ///     }
 /// }
 ///
 /// /// CommandHandler that prints out a greeting
-/// #[derive(Debug, Default)]
+/// #[derive(Default)]
 /// pub struct Greet;
 ///
-/// impl<W: io::Write> CommandHandler<W> for Greet {
-///     fn execute(&self, _stdout: &mut W, _args: &[&str]) -> CommandResult {
-///         let joined_args = _args.join(", ");
-///         match _args.len() {
-///             0 => _stdout.write(format!("Hello, {}!", joined_args).as_bytes()).unwrap(),
-///             _ => _stdout.write(b"Hello!").unwrap(),
+/// impl<W> CommandHandler<W> for Greet
+///     where W: std::io::Write {
+///     fn execute(&self, output: &mut W, args: &[&str]) -> CommandResult {
+///         let joined_args = args.join(", ");
+///         match args.len() {
+///             0 => output.write(format!("Hello, {}!", joined_args).as_bytes()).unwrap(),
+///             _ => output.write(b"Hello!").unwrap(),
 ///         };
 ///         CommandResult::Continue
 ///     }
 /// }
 /// ```
-pub trait CommandHandler<W = io::Stdout>: fmt::Debug {
+pub trait CommandHandler<W>
+where
+    W: std::io::Write,
+{
     /// Required method to execute a command
-    fn execute(&self, _stdout: &mut W, _args: &[&str]) -> CommandResult;
+    fn execute(&self, output: &mut W, args: &[&str]) -> CommandResult;
 }
 
+/// Enum to determine whether to continue or break the Cmd.run() loop
 pub enum CommandResult {
     Continue,
     Break,
+}
+
+/// Blanket CommandHandler implementation for Fn(&mut W, &[&str]) -> CommandResult
+/// allows CommandHandlers to be registered as closures
+impl<F, W> CommandHandler<W> for F
+where
+    W: std::io::Write,
+    F: Fn(&mut W, &[&str]) -> CommandResult,
+{
+    fn execute(&self, output: &mut W, args: &[&str]) -> CommandResult {
+        self(output, args)
+    }
 }

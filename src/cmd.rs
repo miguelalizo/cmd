@@ -5,14 +5,21 @@ use crate::command_handler::{CommandHandler, CommandResult};
 
 /// Command interpreter implemented as struct that contains
 /// boxed CommandHandlers in a hashmap with Strings as the keys
-#[derive(Debug)]
-pub struct Cmd<R: io::BufRead, W: io::Write> {
+pub struct Cmd<R, W>
+where
+    W: io::Write + 'static,
+    R: io::BufRead + 'static,
+{
     handles: HashMap<String, Box<dyn CommandHandler<W>>>,
     stdin: R,
     stdout: W,
 }
 
-impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W> {
+impl<R, W> Cmd<R, W>
+where
+    W: io::Write + 'static,
+    R: io::BufRead + 'static,
+{
     /// Create new Cmd instance
     pub fn new(reader: R, writer: W) -> Cmd<R, W>
     where
@@ -62,13 +69,24 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W> {
         Ok(())
     }
 
-    /// Insert new command into the Cmd handles HashMap
+    /// Insert new handler into the Cmd handles HashMap defined by a function or closure
+    ///
+    /// ## Note: Will not overwrite existing handler names
+    pub fn add_cmd_fn(
+        &mut self,
+        name: String,
+        handler: impl Fn(&mut W, &[&str]) -> CommandResult + 'static,
+    ) -> Result<(), io::Error> {
+        self.add_cmd(name, handler)
+    }
+
+    /// Insert new handler into the Cmd handles HashMap
     ///
     /// ## Note: Will not overwrite existing handler names
     pub fn add_cmd(
         &mut self,
         name: String,
-        handler: Box<dyn CommandHandler<W>>,
+        handler: impl CommandHandler<W> + 'static,
     ) -> Result<(), io::Error> {
         match self.handles.get(&name) {
             Some(_) => write!(
@@ -77,7 +95,7 @@ impl<R: io::BufRead + 'static, W: io::Write + 'static> Cmd<R, W> {
                 name
             )?,
             None => {
-                self.handles.insert(name, handler);
+                self.handles.insert(name, Box::new(handler));
             }
         }
 
@@ -113,7 +131,7 @@ mod tests {
     use crate::command_handler::CommandResult;
     use crate::handlers::Quit;
 
-    #[derive(Debug, Default)]
+    #[derive(Default)]
     pub struct Greeting {}
 
     impl<W: io::Write> CommandHandler<W> for Greeting {
@@ -164,10 +182,8 @@ mod tests {
         let greet_handler = Greeting::default();
 
         // Add the trait object to the HashMap
-        app.add_cmd(String::from("greet"), Box::new(greet_handler))
-            .unwrap();
-        app.add_cmd(String::from("quit"), Box::new(Quit::default()))
-            .unwrap();
+        app.add_cmd(String::from("greet"), greet_handler).unwrap();
+        app.add_cmd(String::from("quit"), Quit::default()).unwrap();
         app
     }
 
@@ -190,8 +206,7 @@ mod tests {
         let mut app = setup();
 
         // Verify message is printed out when a handle with existing name is added
-        app.add_cmd("greet".to_string(), Box::new(Greeting {}))
-            .unwrap();
+        app.add_cmd("greet".to_string(), Greeting {}).unwrap();
 
         let mut std_out_lines = app.stdout.lines();
         let line1 = std_out_lines.next().unwrap().unwrap();
@@ -207,12 +222,8 @@ mod tests {
         let mut app = Cmd::new(stdin, stdout);
 
         // add same command twice, which will cause the self.stdout.write() path to output error
-        let _ok = app
-            .add_cmd("greet".to_string(), Box::new(Greeting {}))
-            .unwrap();
-        let e = app
-            .add_cmd("greet".to_string(), Box::new(Greeting {}))
-            .unwrap_err();
+        let _ok = app.add_cmd("greet".to_string(), Greeting {}).unwrap();
+        let e = app.add_cmd("greet".to_string(), Greeting {}).unwrap_err();
 
         assert_eq!(e.to_string(), "failed on write");
         assert_eq!(e.kind(), io::ErrorKind::Other);

@@ -12,36 +12,43 @@
 //! use std::io;
 //! use std::io::Write;
 //!
-//! use rusty_cmd::command_handler::{CommandHandler, CommandResult};
 //! use rusty_cmd::cmd::Cmd;
+//! use rusty_cmd::command_handler::{CommandHandler, CommandResult};
 //! use rusty_cmd::handlers::Quit;
 //!
-//!
 //! /// CommandHandler that prints out help message
-//! #[derive(Debug, Default)]
+//! #[derive(Default)]
 //! pub struct Help;
 //!
-//! impl CommandHandler for Help {
-//!     fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
-//!         writeln!(_stdout, "Help message").unwrap();
+//! impl<W> CommandHandler<W> for Help
+//! where
+//!     W: std::io::Write,
+//! {
+//!     fn execute(&self, output: &mut W, _args: &[&str]) -> CommandResult {
+//!         writeln!(output, "Help message").expect("Should be able to write to output");
 //!         CommandResult::Continue
 //!     }
 //! }
 //!
 //! /// CommandHandler that emulates the basic bash touch command to create a new file
-//! #[derive(Debug, Default)]
+//! #[derive(Default)]
 //! pub struct Touch;
 //!
-//! impl CommandHandler for Touch {
-//!     fn execute(&self, _stdout: &mut io::Stdout, _args: &[&str]) -> CommandResult {
+//! impl<W> CommandHandler<W> for Touch
+//! where
+//!     W: std::io::Write,
+//! {
+//!     fn execute(&self, output: &mut W, _args: &[&str]) -> CommandResult {
 //!         let option_filename = _args.first();
-//!     
+//!
 //!         match option_filename {
 //!             Some(filename) => {
 //!                 let fs_result = std::fs::File::create(filename);
 //!                 match fs_result {
-//!                     Ok(file) => println!("Created file: {:?}", file),
-//!                     Err(_) => println!("Could not create file: {}", filename),
+//!                     Ok(file) => writeln!(output, "Created file: {:?}", file)
+//!                         .expect("Should be able to write to output"),
+//!                     Err(_) => writeln!(output, "Could not create file: {}", filename)
+//!                         .expect("Should be able to write to output"),
 //!                 }
 //!             }
 //!             None => println!("Need to specify a filename"),
@@ -50,25 +57,24 @@
 //!     }
 //! }
 //!
+//! fn main() -> Result<(), std::io::Error> {
+//!     let mut cmd = Cmd::new(io::BufReader::new(io::stdin()), io::stdout());
 //!
-//! fn main() -> Result<(), std::io::Error>{
-//!     let mut cmd = Cmd::new(
-//!         io::BufReader::new(io::stdin()),
-//!         io::stdout())
-//!     ;
-//!
-//!     let help = Help::default();
-//!     let hello = Touch::default();
+//!     let help = Help;
+//!     let hello = Touch;
 //!     let quit = Quit::default();
 //!
-//!     cmd.add_cmd(String::from("help"), Box::new(help))?;
-//!     cmd.add_cmd(String::from("touch"), Box::new(hello))?;
-//!     cmd.add_cmd(String::from("quit"), Box::new(quit))?;
+//!     cmd.add_cmd(String::from("help"), help)?;
+//!     cmd.add_cmd(String::from("touch"), hello)?;
+//!     cmd.add_cmd_fn(String::from("greet"), |output, _args| {
+//!         writeln!(output, "hello!").expect("Should be able to write to output");
+//!         CommandResult::Continue
+//!     })?;
+//!     cmd.add_cmd(String::from("quit"), quit)?;
 //!
-//!     // cmd.run()?; uncommend to run cmd
+//!     // cmd.run()?; // uncomment to run
 //!
 //!     Ok(())
-//!
 //! }
 //! ```
 

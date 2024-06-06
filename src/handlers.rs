@@ -4,7 +4,7 @@ use std::io;
 /// Ready-to-use command to quit the cmd loop
 ///
 /// Returning CommandResult::Break instructs the Cmd.run() loop to break
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Quit {}
 
 impl<W: io::Write> CommandHandler<W> for Quit {
