@@ -1,6 +1,5 @@
-/// Interface for creating new commands
+/// Trait for creating new commands
 ///
-/// Defines io::Stdout as the default generic type.
 /// Returning CommandResult::Break instructs the Cmd.run() loop to break.
 ///
 /// # Examples
