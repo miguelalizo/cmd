@@ -2,7 +2,7 @@
 name = "rusty-cmd"
 description = "A crate for creating custom line-oriented command interpreters in Rust."
 repository = "https://github.com/miguelalizo/cmd"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 license = "MIT"
 readme = "./README.md"
